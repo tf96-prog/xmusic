@@ -1,30 +1,46 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 
-class Usuario(models.Model):
-    id=models.IntegerField(primary_key=True)
-    email=models.CharField(max_length=150)
-    contrasenia=models.CharField(max_length=150)
 
-class Lista(models.Model):
-    id=models.IntegerField(primary_key=True)
-    nombre=models.CharField(max_length=150)
-    n_canciones=models.IntegerField()
-
-class Cancion(models.Model):
-    id=models.IntegerField(primary_key=True)
-    nombre=models.CharField(max_length=150)
-    duracion=models.IntegerField()
-    genero=models.CharField(max_length=150)
 
 class Artista(models.Model):
-    id=models.IntegerField(primary_key=True)
+    
     nombre=models.CharField(max_length=150)
 
+    def __str__(self):
+        return self.nombre
+
 class Album(models.Model):
-    id=models.IntegerField(primary_key=True)
+    artista=models.ForeignKey(Artista, on_delete=models.CASCADE)
     nombre=models.CharField(max_length=150)
     anio=models.IntegerField()
 
+    def __str__(self):
+        return self.artista.nombre + " - " + self.nombre
+
+class Cancion(models.Model):
+    album=models.ForeignKey(Album,on_delete=models.CASCADE)
+    usuario=models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    nombre=models.CharField(max_length=150)
+    duracion=models.IntegerField()
+    genero=models.CharField(max_length=150)
+    colaboradores=models.ManyToManyField(Artista)
+    
+    def __str__(self):
+        return self.nombre
+
+class Lista(models.Model):
+    usuario=models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    nombre=models.CharField(max_length=150)
+    canciones=models.ManyToManyField(Cancion)
+
+    def __str__(self):
+        return self.nombre
+
+
 class Reproduccion(models.Model):
-    id_cancion=models.IntegerField()
-    fecha=models.DateTimeField()
+    cancion=models.ForeignKey(Cancion, on_delete=models.CASCADE)
+    fecha=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.cancion.nombre + " - " + str(self.fecha)
