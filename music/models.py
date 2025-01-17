@@ -43,4 +43,4 @@ class Reproduccion(models.Model):
     fecha=models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.cancion.nombre + " - " + str(self.fecha)
+        return self.cancion.nombre + " - " + self.fecha.strftime("%d/%m/%y, %H:%M:%S")
