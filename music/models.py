@@ -2,13 +2,15 @@ from django.db import models
 from django.contrib.auth import get_user_model
 
 
-
 class Artista(models.Model):
     
     nombre=models.CharField(max_length=150)
 
     def __str__(self):
         return self.nombre
+    
+    class Meta:
+        ordering = ['nombre']
 
 class Album(models.Model):
     artista=models.ForeignKey(Artista, on_delete=models.CASCADE)
@@ -17,6 +19,9 @@ class Album(models.Model):
 
     def __str__(self):
         return self.artista.nombre + " - " + self.nombre
+    
+    class Meta:
+        ordering = ['artista','nombre']
 
 class Cancion(models.Model):
     album=models.ForeignKey(Album,on_delete=models.CASCADE)
@@ -28,6 +33,9 @@ class Cancion(models.Model):
     
     def __str__(self):
         return self.nombre
+    
+    class Meta:
+        ordering = ['album','nombre']
 
 class Lista(models.Model):
     usuario=models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
@@ -36,6 +44,9 @@ class Lista(models.Model):
 
     def __str__(self):
         return self.nombre
+    
+    class Meta:
+        ordering = ['nombre']
 
 
 class Reproduccion(models.Model):
@@ -44,3 +55,6 @@ class Reproduccion(models.Model):
 
     def __str__(self):
         return self.cancion.nombre + " - " + self.fecha.strftime("%d/%m/%y, %H:%M:%S")
+    
+    class Meta:
+        ordering = ['cancion']
