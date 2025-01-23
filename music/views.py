@@ -40,7 +40,7 @@ def artista_list(request):
 
         
 
-@api_view(['GET','PUT'])
+@api_view(['GET','PUT','DELETE'])
 def artista_detail(request, pk):
     """
     Retrieve, update or delete a code artista.
@@ -59,5 +59,15 @@ def artista_detail(request, pk):
             serial.save()
             return JsonResponse(serial.data)
         return Response(serial.errors, status=400)
+    if request.method == 'DELETE':
+        serilier=ArtistaSerializer(data=request.data)
+        if serilier.is_valid():
+            if artista.pk==pk:
+                artista.delete()
+                return Response(serilier.data,status=204)
+            else:
+                return JsonResponse({"error": "Los datos del objeto no coinciden con el ID solicitado"}, status=400)
+        else:
+            return JsonResponse(serilier.errors, status=400)
         
         
