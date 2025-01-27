@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from music.models import Artista, Album, Cancion
 from music.serializers import ArtistaSerializer, AlbumSerializer, CancionSerializer
 from rest_framework.views import APIView
@@ -64,10 +63,14 @@ class ArtistaDetailView(APIView):
     """
 
     def get_object(self, pk):
+
+        #si el exista existe, lo retorna con el id asociado
         try:
             return Artista.objects.get(pk=pk)
         except Artista.DoesNotExist:
-            return HttpResponse(status=404)
+
+            #si no existe el artista, returna "none"
+            return None
 
     def get(self, request,pk):
         artista = self.get_object(pk)
@@ -75,30 +78,31 @@ class ArtistaDetailView(APIView):
             return Response(status=404)
         serializer = ArtistaSerializer(artista)
         return JsonResponse(serializer.data)
+    
     def put(self, request,pk):
 
         if request.user.is_superuser:
             artista = self.get_object(pk)
-            serial=ArtistaSerializer(artista,data=request.data)
+            if artista is None:
+                return Response(status=404)
+            serial=ArtistaSerializer(artista, data=request.data)
             if serial.is_valid():
                 serial.save()
                 return JsonResponse(serial.data)
-            return Response(serial.errors, status=400)
-        return Response(serial.errors, status=401)
+            return JsonResponse(serial.errors, status=400)
+        else:
+            return JsonResponse({"mensaje":"Acceso no autorizado"}, status=401)
+    
     def delete(self, request,pk):
-
         if request.user.is_superuser:
             artista = self.get_object(pk)
-            serilier=ArtistaSerializer(data=request.data)
-            if serilier.is_valid():
-                if artista.pk==pk:
-                    artista.delete()
-                    return Response(serilier.data,status=204)
-                else:
-                    return JsonResponse({"error": "Los datos del objeto no coinciden con el ID solicitado"}, status=400)
+            if artista is not None:
+                artista.delete()
+                return JsonResponse({"mensaje":"Artista eliminado"}, status=200)
             else:
-                return JsonResponse(serilier.errors, status=400)
-        return Response(serilier.errors, status=401)
+                return JsonResponse({"mensaje":"Artista actualizado"},status=404)
+        else:
+            return JsonResponse({"mensaje":"Acceso no autorizado"}, status=401)
 
 
 #album
@@ -142,7 +146,7 @@ class AlbumDetailView(APIView):
         try:
             return Album.objects.get(pk=pk)
         except Album.DoesNotExist:
-            return HttpResponse(status=404)
+            return None
 
     def get(self, request,pk):
         album = self.get_object(pk)
@@ -159,15 +163,13 @@ class AlbumDetailView(APIView):
         return Response(serial.errors, status=400)
     def delete(self, request,pk):
         album = self.get_object(pk)
-        serilier=AlbumSerializer(data=request.data)
-        if serilier.is_valid():
-            if album.pk==pk:
+        if album is not None:
                 album.delete()
-                return Response(serilier.data,status=204)
-            else:
-                return JsonResponse({"error": "Los datos del objeto no coinciden con el ID solicitado"}, status=400)
+                return JsonResponse({"mensaje":"Album eliminado"}, status=200)
         else:
-            return JsonResponse(serilier.errors, status=400)
+            return JsonResponse({"mensaje":"Album actualizado"}, status=204)
+
+
         
 #cancion
 class CancionListView(APIView):
@@ -197,7 +199,7 @@ class CancionListView(APIView):
         
 class CancionDetailView(APIView):
     """
-    Retrieve, update or delete a code album.
+    Retrieve, update or delete a code cancion.
     """
 
     def get_object(self, pk):
