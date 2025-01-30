@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from music.models import Artista, Album, Cancion, Lista
 from music.serializers import ArtistaSerializer, AlbumSerializer, CancionSerializer, ListaSerializer
 from rest_framework.views import APIView
@@ -23,7 +23,7 @@ class UserLoginView(APIView):
             token, created = Token.objects.get_or_create(user=user)
             return Response({'token': token.key})
         else:
-            return Response({'error': 'Invalid credentials'}, status=401)
+            return Response({'error': 'Credenciales invalidas'}, status=401)
         
 
 #artista
@@ -180,11 +180,10 @@ class AlbumDetailView(APIView):
     def delete(self, request,pk):
         album = self.get_object(pk)
         if request.user.is_superuser:
-            if album is not None:
-                album.delete()
-                return JsonResponse({"mensaje":"Album eliminado"}, status=200)
-            else:
-                return JsonResponse({"mensaje":"El album es nulo"}, status=404)
+            if album is None:
+               return JsonResponse({"mensaje":"El album es nulo"}, status=404)
+            album.delete()
+            return JsonResponse({"mensaje":"Album eliminado"}, status=200)
         return JsonResponse({"mensaje":"Acceso no autorizado"},status=401)
 
         
@@ -228,7 +227,7 @@ class CancionDetailView(APIView):
         except Cancion.DoesNotExist:
             return None
 
-    #validar si la cancion es nulo
+    #validar si la cancion es nula
     def get(self, request,pk):
         cancion = self.get_object(pk)
         if cancion is None:
@@ -265,17 +264,27 @@ class CancionDetailView(APIView):
 
 
 #lista de reproduccion
-class ListaRListView(APIView):
+class ListaListView(APIView):
     """
     Muestra la lista de listas_r, y/o crea listas_r
     """
     
     #mostrar la lista de listas_r
     def get(self, request):
-
-        listas_r = Lista.objects.all()
-        serializer = ListaSerializer(listas_r, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        
+        if request.user.is_anonymous:
+            return JsonResponse({"mensaje":"Las listas solo pueden ser vistas por usuarios autenticados"},status=400)
+        if request.user.is_authenticated:
+            listas=Lista.objects.filter(usuario=request.user.id)
+            serializer = ListaSerializer(listas, many=True)
+            return JsonResponse(serializer.data, safe=False, status=200)
+        if request.user.is_superuser:
+            listas = Lista.objects.all()
+            serializer = ListaSerializer(listas, many=True)
+            return JsonResponse(serializer.data,status=200)
+        return Response(status=400)
+        
+        
         
     #añade lista_r
     def post(self, request):
@@ -284,15 +293,15 @@ class ListaRListView(APIView):
             
             serial=ListaSerializer(data=request.data)
             if serial.is_valid():
-                lista_r=serial.save(usuario=request.user)
-                return Response(ListaSerializer(lista_r).data,status=201)
+                lista=serial.save(usuario=request.user)
+                return Response(ListaSerializer(lista).data,status=201)
             return JsonResponse({"mensaje":"Lista no valida"}, status=400)
             
         else:
-            return Response({"mensaje":"Acceso a creacion de listas solo a administradores"}, status=403)
+            return Response({"mensaje":"Acceso a creacion de listas solo a usuarios autenticados"}, status=403)
 
 
-class ListaRDetailView(APIView):
+class ListaDetailView(APIView):
     """
     Obtiene lista_r mediante id , actualiza y/o elimina lista_r
     """
@@ -304,37 +313,37 @@ class ListaRDetailView(APIView):
         except Lista.DoesNotExist:
             return None
 
-    #validar si la lista_r es nulo
+    #validar si la lista_r es nula
     def get(self, request,pk):
-        lista_r = self.get_object(pk)
-        if lista_r is None:
+        lista = self.get_object(pk)
+        if lista is None:
             return Response(status=404)
-        serializer = ListaSerializer(lista_r)
+        serializer = ListaSerializer(lista)
         return JsonResponse(serializer.data)
 
     #actualiza lista_r
     def put(self, request,pk):
         if request.user.is_authenticated:
-            lista_r = self.get_object(pk)
-            if lista_r is None:
+            lista = self.get_object(pk)
+            if lista is None:
                 return Response({"mensaje": "Lista no encontrada"}, status=404)
-            if request.user != lista_r.usuario and not request.user.is_superuser:
+            if request.user != lista.usuario and not request.user.is_superuser:
                 return Response({"mensaje": "No tienes permisos para actualizar esta Lista"}, status=403)
-            serial=ListaSerializer(lista_r,data=request.data)
+            serial=ListaSerializer(lista,data=request.data)
             if serial.is_valid():
-                lista_actualizada = serial.save(usuario=lista_r.usuario)
+                lista_actualizada = serial.save(usuario=lista.usuario)
                 return Response(ListaSerializer(lista_actualizada).data, status=200)
             return Response(serial.errors, status=400)
-        return Response(serial.errors, status=401)
+        return Response({"mensaje":"Acceso no autorizado"}, status=403)
 
     #elimina lista_r
     def delete(self, request,pk):
         if request.user.is_authenticated:
-            lista_r = self.get_object(pk)
-            if lista_r is None:
+            lista = self.get_object(pk)
+            if lista is None:
                 return JsonResponse({"mensaje":"La lista no existe"}, status=404)
-            if request.user != lista_r.usuario and not request.user.is_superuser:
+            if request.user != lista.usuario and not request.user.is_superuser:
                 return Response({"mensaje": "No tienes permisos para eliminar esta lista"}, status=403)
-            lista_r.delete()
+            lista.delete()
             return JsonResponse({"mensaje":"Lista eliminada"}, status=200)
         return JsonResponse({"mensaje": "Acceso no autorizado"}, status=401)

@@ -23,4 +23,4 @@ class CancionSerializer(serializers.ModelSerializer):
 class ListaSerializer(serializers.ModelSerializer):
     class Meta:
         model=Lista
-        fields=[id,'nombre',"canciones"]
+        fields=['id','nombre',"canciones"]
