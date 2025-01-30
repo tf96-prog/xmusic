@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from music.models import Artista, Album, Cancion, Lista
-from music.serializers import ArtistaSerializer, AlbumSerializer, CancionSerializer, ListaSerializer
+from music.models import Artista, Album, Cancion, Lista,Reproduccion
+from music.serializers import ArtistaSerializer, AlbumSerializer, CancionSerializer, ListaSerializer, ReproduccionSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -347,3 +347,15 @@ class ListaDetailView(APIView):
             lista.delete()
             return JsonResponse({"mensaje":"Lista eliminada"}, status=200)
         return JsonResponse({"mensaje": "Acceso no autorizado"}, status=401)
+
+#reproduccion
+class CancionReproduccionView(APIView):
+    #añade reproduccion
+    def post(self, request,pk):
+        try:
+            cancion=Cancion.objects.get(pk=pk)
+        except Cancion.DoesNotExist:
+            return Response({"mensaje": "La canción no existe."}, status=404)
+        reproduccion = Reproduccion.objects.create(cancion=cancion)
+        serializer=ReproduccionSerializer(reproduccion)
+        return Response(serializer.data,status=201)

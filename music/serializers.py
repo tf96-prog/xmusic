@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from music.models import Artista,Album,Cancion,Lista
+from music.models import Artista,Album,Cancion,Lista, Reproduccion
 
 #artista
 class ArtistaSerializer(serializers.ModelSerializer):
@@ -24,3 +24,9 @@ class ListaSerializer(serializers.ModelSerializer):
     class Meta:
         model=Lista
         fields=['id','nombre',"canciones"]
+
+#reproduccion
+class ReproduccionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Reproduccion
+        fields=['id','cancion','fecha']
