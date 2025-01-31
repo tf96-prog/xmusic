@@ -1,15 +1,14 @@
 from django.urls import path
-from .views import ArtistaListView, ArtistaDetailView, AlbumListView, AlbumDetailView,UserLoginView,CancionDetailView,CancionListView,ListaListView,ListaDetailView,CancionReproduccionView
-urlpatterns = [
-    path('login/', UserLoginView.as_view()),
-    path('artistas/', ArtistaListView.as_view()),
-    path('artistas/<int:pk>/', ArtistaDetailView.as_view()),
-    path('albumes/', AlbumListView.as_view()),
-    path('albumes/<int:pk>/', AlbumDetailView.as_view()),
-    path('canciones/', CancionListView.as_view()),
-    path('canciones/<int:pk>/', CancionDetailView.as_view()),
-    path('listas/', ListaListView.as_view()),
-    path('listas/<int:pk>/', ListaDetailView.as_view()),
-    path('canciones/<int:pk>/reproducciones/', CancionReproduccionView.as_view())
-    
-]
+from .views import ArtistaViewSet, AlbumViewSet,UserLoginView,CancionViewSet,ListaViewSet
+
+from rest_framework.routers import DefaultRouter
+
+router=DefaultRouter()
+router.register(r'artistas',ArtistaViewSet,basename='artista')
+router.register(r'albumes',AlbumViewSet,basename='album')
+router.register(r'canciones',CancionViewSet,basename='cancion')
+router.register(r'listas',ListaViewSet,basename='lista')
+
+urlpatterns=router.urls
+
+urlpatterns.append(path('login/', UserLoginView.as_view()))

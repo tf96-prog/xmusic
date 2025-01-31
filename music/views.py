@@ -3,10 +3,13 @@ from django.http import JsonResponse
 from music.models import Artista, Album, Cancion, Lista,Reproduccion
 from music.serializers import ArtistaSerializer, AlbumSerializer, CancionSerializer, ListaSerializer, ReproduccionSerializer
 from rest_framework.views import APIView
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
 from django.contrib.auth import authenticate
+from django.shortcuts import get_object_or_404
+from rest_framework.decorators import action
 
 
 #usuario
@@ -28,20 +31,20 @@ class UserLoginView(APIView):
 
 #artista
 
-class ArtistaListView(APIView):
+class ArtistaViewSet(viewsets.ViewSet):
     """
-    Muestra la lista de artistas, y/o crea artistas
+    Muestra la lista de artistas, y/o crea artistas, actualiza y elimina
     """
     
     #mostar lista de artistas
-    def get(self, request):
+    def list(self, request):
 
         artistas = Artista.objects.all()
         serializer = ArtistaSerializer(artistas, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
         
     #añade artista
-    def post(self, request):
+    def create(self, request):
         
         if request.user.is_superuser:
 
@@ -56,39 +59,20 @@ class ArtistaListView(APIView):
         
         return JsonResponse(serial.errors, safe=False,status=400)
 
-        
 
+    #obtiene artista mediante id
+    def retrieve(self, request,pk):
 
-class ArtistaDetailView(APIView):
-    """
-    Obtiene artista mediante id , actualiza y/o elimina artistas
-    """
-
-    #obtiene artista mediante id o None si no existe
-    def get_object(self, pk):
-
-        
-        try:
-            return Artista.objects.get(pk=pk)
-        except Artista.DoesNotExist:            
-            return None
-
-
-    #valida si el artista es nulo
-    def get(self, request,pk):
-        artista = self.get_object(pk)
-        if artista is None:
-            return Response(status=404)
-        serializer = ArtistaSerializer(artista)
-        return JsonResponse(serializer.data)
+        artistas = Artista.objects.all()
+        artista=get_object_or_404(artistas,pk=pk)
+        serializer=ArtistaSerializer(artista)
+        return Response(serializer.data)
     
     #actualiza artista
-    def put(self, request,pk):
+    def update(self, request,pk):
 
         if request.user.is_superuser:
-            artista = self.get_object(pk)
-            if artista is None:
-                return Response(status=404)
+            artista = Artista.objects.get(pk=pk)
             serial=ArtistaSerializer(artista, data=request.data)
             if serial.is_valid():
                 serial.save()
@@ -99,9 +83,9 @@ class ArtistaDetailView(APIView):
     
 
     #elimina artista
-    def delete(self, request,pk):
+    def destroy(self, request,pk):
         if request.user.is_superuser:
-            artista = self.get_object(pk)
+            artista = Artista.objects.get(pk=pk)
             if artista is not None:
                 artista.delete()
                 return JsonResponse({"mensaje":"Artista eliminado"}, status=200)
@@ -113,20 +97,20 @@ class ArtistaDetailView(APIView):
 
 #album
 
-class AlbumListView(APIView):
+class AlbumViewSet(viewsets.ViewSet):
     """
-    Muestra la lista de Album, y/o crea Albumes
+    Muestra la lista de Album, y/o crea Albumes, actualiza y elimina
     """
     
     #mostrar la lista de albumes
-    def get(self, request):
+    def list(self, request):
         albums = Album.objects.all()
         serializer = AlbumSerializer(albums, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
         
         
     #añade album
-    def post(self, request):
+    def create(self, request):
         
         if request.user.is_superuser:
 
@@ -140,35 +124,19 @@ class AlbumListView(APIView):
         
         
         return JsonResponse(serial.errors, safe=False,status=400)
+    
+    #obtiene album mediante id
+    def retrieve(self,request, pk):
+        albumes = Album.objects.all()
+        album=get_object_or_404(albumes,pk=pk)
+        serializer=AlbumSerializer(album)
+        return Response(serializer.data)
 
-        
-
-
-class AlbumDetailView(APIView):
-    """
-    Obtiene album mediante id , actualiza y/o elimina albumes
-    """
-    #obtiene album mediante id o None si no existe
-    def get_object(self, pk):
-        try:
-            return Album.objects.get(pk=pk)
-        except Album.DoesNotExist:
-            return None
-
-    #valida si el album es nulo
-    def get(self, request,pk):
-        album = self.get_object(pk)
-        if album is None:
-            return Response(status=404)
-        serializer = AlbumSerializer(album)
-        return JsonResponse(serializer.data)
 
     #actualiza album
-    def put(self, request,pk):
-        album = self.get_object(pk)
+    def update(self, request,pk):
+        album = Album.objects.get(pk=pk)
         if request.user.is_superuser:
-            if album is None:
-                return Response(status=404)
             serial=AlbumSerializer(album,data=request.data)
             if serial.is_valid():
                 serial.save()
@@ -177,11 +145,9 @@ class AlbumDetailView(APIView):
         return JsonResponse({"mensaje":"Acceso no autorizado"},status=401)
     
     #elimina album
-    def delete(self, request,pk):
-        album = self.get_object(pk)
+    def destroy(self, request,pk):
+        album = Album.objects.get(pk=pk)
         if request.user.is_superuser:
-            if album is None:
-               return JsonResponse({"mensaje":"El album es nulo"}, status=404)
             album.delete()
             return JsonResponse({"mensaje":"Album eliminado"}, status=200)
         return JsonResponse({"mensaje":"Acceso no autorizado"},status=401)
@@ -189,20 +155,20 @@ class AlbumDetailView(APIView):
         
 #cancion
 
-class CancionListView(APIView):
+class CancionViewSet(viewsets.ViewSet):
     """
-    Muestra la lista de canciones, y/o crea canciones
+    Muestra la lista de canciones, y/o crea canciones, actualiza y/o elimina
     """
     
     #mostrar la lista de canciones
-    def get(self, request):
+    def list(self, request):
 
         canciones = Cancion.objects.all()
         serializer = CancionSerializer(canciones, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
         
     #añade cancion
-    def post(self, request):
+    def create(self, request):
         
         if request.user.is_authenticated:
             
@@ -214,33 +180,19 @@ class CancionListView(APIView):
             
         else:
             return Response({"mensaje":"Acceso a creacion de canciones solo a administradores"}, status=403)
-        
-class CancionDetailView(APIView):
-    """
-    Obtiene cancion mediante id , actualiza y/o elimina canciones
-    """
+    
+    #obtiene cancion mediante id
+    def retrieve(self, request,pk):
+        canciones = Cancion.objects.all()
+        cancion=get_object_or_404(canciones,pk=pk)
+        serializer=CancionSerializer(cancion)
+        return Response(serializer.data)
 
-    #obtiene cancion mediante id o None si no existe
-    def get_object(self, pk):
-        try:
-            return Cancion.objects.get(pk=pk)
-        except Cancion.DoesNotExist:
-            return None
-
-    #validar si la cancion es nula
-    def get(self, request,pk):
-        cancion = self.get_object(pk)
-        if cancion is None:
-            return Response(status=404)
-        serializer = CancionSerializer(cancion)
-        return JsonResponse(serializer.data)
 
     #actualiza cancion
-    def put(self, request,pk):
+    def update(self, request,pk):
         if request.user.is_authenticated:
-            cancion = self.get_object(pk)
-            if cancion is None:
-                return Response({"mensaje": "Canción no encontrada"}, status=404)
+            cancion = Cancion.objects.get(pk=pk)
             if request.user != cancion.usuario and not request.user.is_superuser:
                 return Response({"mensaje": "No tienes permisos para actualizar esta canción"}, status=403)
             serial=CancionSerializer(cancion,data=request.data)
@@ -251,26 +203,35 @@ class CancionDetailView(APIView):
         return Response(serial.errors, status=401)
 
     #elimina cancion
-    def delete(self, request,pk):
+    def destroy(self, request,pk):
         if request.user.is_authenticated:
-            cancion = self.get_object(pk)
-            if cancion is None:
-                return JsonResponse({"mensaje":"La cancion no existe"}, status=404)
+            cancion = Cancion.objects.get(pk=pk)
             if request.user != cancion.usuario and not request.user.is_superuser:
                 return Response({"mensaje": "No tienes permisos para eliminar esta canción"}, status=403)
             cancion.delete()
             return JsonResponse({"mensaje":"Cancion eliminada"}, status=200)
         return JsonResponse({"mensaje": "Acceso no autorizado"}, status=401)
+    
+    #añade reproduccion
+    @action(detail=True, methods=['post'])
+    def add_reproduccion(self, request,pk):
+        try:
+            cancion=Cancion.objects.get(pk=pk)
+        except Cancion.DoesNotExist:
+            return Response({"mensaje": "La canción no existe."}, status=404)
+        reproduccion = Reproduccion.objects.create(cancion=cancion)
+        serializer=ReproduccionSerializer(reproduccion)
+        return Response(serializer.data,status=201)
 
 
 #lista de reproduccion
-class ListaListView(APIView):
+class ListaViewSet(viewsets.ViewSet):
     """
-    Muestra la lista de listas_r, y/o crea listas_r
+    Muestra la lista de listas_r, y/o crea listas_r, actualiza y elimina
     """
     
     #mostrar la lista de listas_r
-    def get(self, request):
+    def list(self, request):
         
         if request.user.is_anonymous:
             return JsonResponse({"mensaje":"Las listas solo pueden ser vistas por usuarios autenticados"},status=400)
@@ -287,7 +248,7 @@ class ListaListView(APIView):
         
         
     #añade lista_r
-    def post(self, request):
+    def create(self, request):
         
         if request.user.is_authenticated:
             
@@ -300,33 +261,18 @@ class ListaListView(APIView):
         else:
             return Response({"mensaje":"Acceso a creacion de listas solo a usuarios autenticados"}, status=403)
 
+    #obtiene lista_r mediante id
+    def retrieve(self, request,pk):
+        listas = Lista.objects.all()
+        lista=get_object_or_404(listas,pk=pk)
+        serializer=ListaSerializer(lista)
+        return Response(serializer.data)
 
-class ListaDetailView(APIView):
-    """
-    Obtiene lista_r mediante id , actualiza y/o elimina lista_r
-    """
-
-    #obtiene lista_r mediante id o None si no existe
-    def get_object(self, pk):
-        try:
-            return Lista.objects.get(pk=pk)
-        except Lista.DoesNotExist:
-            return None
-
-    #validar si la lista_r es nula
-    def get(self, request,pk):
-        lista = self.get_object(pk)
-        if lista is None:
-            return Response(status=404)
-        serializer = ListaSerializer(lista)
-        return JsonResponse(serializer.data)
 
     #actualiza lista_r
-    def put(self, request,pk):
+    def update(self, request,pk):
         if request.user.is_authenticated:
-            lista = self.get_object(pk)
-            if lista is None:
-                return Response({"mensaje": "Lista no encontrada"}, status=404)
+            lista = Lista.objects.get(pk=pk)
             if request.user != lista.usuario and not request.user.is_superuser:
                 return Response({"mensaje": "No tienes permisos para actualizar esta Lista"}, status=403)
             serial=ListaSerializer(lista,data=request.data)
@@ -337,25 +283,11 @@ class ListaDetailView(APIView):
         return Response({"mensaje":"Acceso no autorizado"}, status=403)
 
     #elimina lista_r
-    def delete(self, request,pk):
+    def destroy(self, request,pk):
         if request.user.is_authenticated:
-            lista = self.get_object(pk)
-            if lista is None:
-                return JsonResponse({"mensaje":"La lista no existe"}, status=404)
+            lista = Lista.objects.get(pk=pk)
             if request.user != lista.usuario and not request.user.is_superuser:
                 return Response({"mensaje": "No tienes permisos para eliminar esta lista"}, status=403)
             lista.delete()
             return JsonResponse({"mensaje":"Lista eliminada"}, status=200)
         return JsonResponse({"mensaje": "Acceso no autorizado"}, status=401)
-
-#reproduccion
-class CancionReproduccionView(APIView):
-    #añade reproduccion
-    def post(self, request,pk):
-        try:
-            cancion=Cancion.objects.get(pk=pk)
-        except Cancion.DoesNotExist:
-            return Response({"mensaje": "La canción no existe."}, status=404)
-        reproduccion = Reproduccion.objects.create(cancion=cancion)
-        serializer=ReproduccionSerializer(reproduccion)
-        return Response(serializer.data,status=201)
