@@ -135,19 +135,22 @@ class AlbumViewSet(viewsets.ViewSet):
 
     #actualiza album
     def update(self, request,pk):
-        album = Album.objects.get(pk=pk)
+        
         if request.user.is_superuser:
+            album = Album.objects.get(pk=pk)
             serial=AlbumSerializer(album,data=request.data)
             if serial.is_valid():
                 serial.save()
                 return JsonResponse(serial.data)
             return Response(serial.errors, status=400)
-        return JsonResponse({"mensaje":"Acceso no autorizado"},status=401)
+        else:
+            return JsonResponse({"mensaje":"Acceso no autorizado"},status=401)
     
     #elimina album
     def destroy(self, request,pk):
-        album = Album.objects.get(pk=pk)
+        
         if request.user.is_superuser:
+            album = Album.objects.get(pk=pk)
             album.delete()
             return JsonResponse({"mensaje":"Album eliminado"}, status=200)
         return JsonResponse({"mensaje":"Acceso no autorizado"},status=401)
