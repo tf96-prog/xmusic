@@ -180,9 +180,7 @@ class CancionViewSet(viewsets.ViewSet):
                 cancion=serial.save(usuario=request.user)
                 return Response(CancionSerializer(cancion).data,status=201)
             return JsonResponse({"mensaje":"Cancion no valida"}, status=400)
-            
-        else:
-            return Response({"mensaje":"Acceso a creacion de canciones solo a administradores"}, status=403)
+        return Response({"mensaje":"Acceso a creacion de canciones solo a autenticados"}, status=403)
     
     #obtiene cancion mediante id
     def retrieve(self, request,pk):
@@ -196,14 +194,15 @@ class CancionViewSet(viewsets.ViewSet):
     def update(self, request,pk):
         if request.user.is_authenticated:
             cancion = Cancion.objects.get(pk=pk)
+            serial=CancionSerializer(cancion,data=request.data)
             if request.user != cancion.usuario and not request.user.is_superuser:
                 return Response({"mensaje": "No tienes permisos para actualizar esta canción"}, status=403)
-            serial=CancionSerializer(cancion,data=request.data)
+            
             if serial.is_valid():
                 cancion_actualizada = serial.save(usuario=cancion.usuario)
                 return Response(CancionSerializer(cancion_actualizada).data, status=200)
             return Response(serial.errors, status=400)
-        return Response(serial.errors, status=401)
+        return Response({"mensaje":"Acceso no autorizado"}, status=401)
 
     #elimina cancion
     def destroy(self, request,pk):
@@ -293,4 +292,4 @@ class ListaViewSet(viewsets.ViewSet):
                 return Response({"mensaje": "No tienes permisos para eliminar esta lista"}, status=403)
             lista.delete()
             return JsonResponse({"mensaje":"Lista eliminada"}, status=200)
-        return JsonResponse({"mensaje": "Acceso no autorizado"}, status=401)
+        return JsonResponse({"mensaje": "Acceso no autorizado"}, status=403)
