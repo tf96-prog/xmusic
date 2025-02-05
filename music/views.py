@@ -236,7 +236,7 @@ class ListaViewSet(viewsets.ViewSet):
     def list(self, request):
         
         if request.user.is_anonymous:
-            return JsonResponse({"mensaje":"Las listas solo pueden ser vistas por usuarios autenticados"},status=400)
+            return JsonResponse({"mensaje":"Las listas solo pueden ser vistas por usuarios autenticados"},status=403)
         if request.user.is_authenticated:
             listas=Lista.objects.filter(usuario=request.user.id)
             serializer = ListaSerializer(listas, many=True)
