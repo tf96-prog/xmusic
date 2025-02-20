@@ -17,7 +17,7 @@ class AlbumSerializer(serializers.ModelSerializer):
 class CancionSerializer(serializers.ModelSerializer):
     class Meta:
         model=Cancion
-        fields=['id','album','nombre','duracion','genero','colaboradores']
+        fields=['id','album','nombre','duracion','genero','colaboradores','url']
 
 #lista
 class ListaSerializer(serializers.ModelSerializer):

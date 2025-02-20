@@ -29,6 +29,7 @@ class Cancion(models.Model):
     duracion=models.IntegerField()
     genero=models.CharField(max_length=150)
     colaboradores=models.ManyToManyField(Artista)
+    url=models.CharField(max_length=200)
     
     def __str__(self):
         return self.nombre
