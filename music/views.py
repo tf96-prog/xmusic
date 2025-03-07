@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from music.models import Artista, Album, Cancion, Lista,Reproduccion
-from music.serializers import ArtistaSerializer, AlbumSerializer, CancionSerializer, ListaSerializer, ReproduccionSerializer
+from music.serializers import ArtistaSerializer, AlbumSerializer, CancionSerializer, ListaSerializer, ReproduccionSerializer,UsuarioSerializer
 from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.response import Response
@@ -10,13 +10,14 @@ from rest_framework.authentication import TokenAuthentication
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
+from django.contrib.auth import get_user_model
 
 
 #usuario
 
 class UserLoginView(APIView):
     authentication_classes=[TokenAuthentication]
-
+    
     #autenticacion de usuario mediante creacion de token
 
     def post(self, request):
@@ -26,8 +27,16 @@ class UserLoginView(APIView):
             token, created = Token.objects.get_or_create(user=user)
             return Response({'token': token.key})
         else:
-            return Response({'error': 'Credenciales invalidas'}, status=401)
-        
+            return Response({'error': 'Credenciales invalidas'}, status=401) 
+
+
+class UsuarioView(APIView):
+    
+    def get(self,request):
+        usuario=request.user
+        serializer=UsuarioSerializer(usuario)
+        return Response(serializer.data)
+
 
 #artista
 

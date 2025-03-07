@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from music.models import Artista,Album,Cancion,Lista, Reproduccion
+from django.contrib.auth import get_user_model
 
 #artista
 class ArtistaSerializer(serializers.ModelSerializer):
@@ -30,3 +31,8 @@ class ReproduccionSerializer(serializers.ModelSerializer):
     class Meta:
         model=Reproduccion
         fields=['id','cancion','fecha']
+
+class UsuarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=get_user_model()
+        fields=['id','username','email']
